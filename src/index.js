@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import Promise from 'bluebird';
 import minimist from 'minimist';
 import username from 'username';

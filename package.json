@@ -1,12 +1,12 @@
 {
   "name": "@gasbuddy/k8s-run",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Run a pod based on a deployment",
   "main": "build/index.js",
   "scripts": {
     "lint": "eslint .",
     "build": "babel src --out-dir build",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "bin": {
     "k8s-run": "build/index.js"
