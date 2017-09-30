@@ -1,6 +1,6 @@
 {
   "name": "@gasbuddy/k8s-run",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Run a pod based on a deployment",
   "main": "build/index.js",
   "scripts": {

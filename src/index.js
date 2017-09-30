@@ -17,11 +17,18 @@ const ext = new Api.Extensions({
   apiVersion: 'v1',
 });
 
+function log(...args) {
+  if (!argv.quiet) {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+}
+
 async function isUp(name, retryCount) {
   const status = await core.ns(ns).po(name).get();
   const { status: { conditions } } = status;
   if (conditions.find(c => c.type === 'Ready' && c.status === 'True')) {
-    console.error(`${name} is ready.`);
+    log(`${name} is ready.`);
     return true;
   }
   await Promise.delay(1000);
@@ -52,13 +59,12 @@ async function run() {
     }
     if (argv.image) {
       c.image = c.image.replace(/:([A-Za-z0-9_]+)$/, `:${argv.image}`);
+      log('Using image', c.image);
     }
   });
 
   await core.ns(ns).po.post({ body: deployment });
-  if (!argv.quiet) {
-    console.log(`${deployment.metadata.name} pod is created.`);
-  }
+  log(`${deployment.metadata.name} pod is created.`);
   if (!argv.detach) {
     const ok = await isUp(deployment.metadata.name, 20);
     if (ok) {
@@ -66,9 +72,7 @@ async function run() {
         stdio: 'inherit',
       }).once('exit', async () => {
         await core.ns(ns).po(deployment.metadata.name).delete();
-        if (!argv.quiet) {
-          console.log(`${deployment.metadata.name} pod has been deleted.`);
-        }
+        log(`${deployment.metadata.name} pod has been deleted.`);
       });
     }
   }
