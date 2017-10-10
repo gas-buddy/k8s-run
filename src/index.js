@@ -53,6 +53,7 @@ async function run() {
   deployment.metadata.name = `${name}-${uname}`;
   deployment.spec.containers.forEach((c) => {
     delete c.readinessProbe;
+    delete c.livenessProbe;
     delete c.resources;
     if (c.name === name) {
       c.command = ['sleep', '99999'];
