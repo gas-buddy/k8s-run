@@ -5,7 +5,9 @@ import username from 'username';
 import Api from 'kubernetes-client';
 import { spawn } from 'child_process';
 
-const argv = minimist(process.argv.slice(2));
+const argv = minimist(process.argv.slice(2), {
+  boolean: ['restartable', 'take-traffic', 'retain'],
+});
 
 const kconf = Api.config.fromKubeconfig();
 kconf.promises = true;
@@ -27,7 +29,7 @@ function log(...args) {
 async function isUp(name, retryCount) {
   const status = await core.ns(ns).po(name).get();
   const { status: { conditions } } = status;
-  if (conditions.find(c => c.type === 'Ready' && c.status === 'True')) {
+  if (conditions && conditions.find(c => c.type === 'Ready' && c.status === 'True')) {
     log(`${name} is ready.`);
     return true;
   }
@@ -49,14 +51,24 @@ async function run() {
     apiVersion: 'v1',
     kind: 'Pod',
   });
-  delete deployment.metadata.labels.app;
+  if (!argv['take-traffic']) {
+    delete deployment.metadata.labels.app;
+  }
   deployment.metadata.name = `${name}-${uname}`;
   deployment.spec.containers.forEach((c) => {
     delete c.readinessProbe;
     delete c.livenessProbe;
     delete c.resources;
     if (c.name === name) {
-      c.command = ['sleep', '99999'];
+      if (argv.restartable) {
+        c.command = [
+          '/bin/sh',
+          '-c',
+          'while /entrypoint.sh node-app || true; do echo "restarting..."; done',
+        ];
+      } else {
+        c.command = ['sleep', '99999'];
+      }
     }
     if (argv.image) {
       c.image = c.image.replace(/:([A-Za-z0-9_]+)$/, `:${argv.image}`);
@@ -72,8 +84,10 @@ async function run() {
       spawn('kubectl', ['exec', '-it', deployment.metadata.name, 'sh'], {
         stdio: 'inherit',
       }).once('exit', async () => {
-        await core.ns(ns).po(deployment.metadata.name).delete();
-        log(`${deployment.metadata.name} pod has been deleted.`);
+        if (!argv.retain) {
+          await core.ns(ns).po(deployment.metadata.name).delete();
+          log(`${deployment.metadata.name} pod has been deleted.`);
+        }
       });
     }
   }
