@@ -18,6 +18,6 @@ $ npm install -g @gasbuddy/k8s-run
 ```
 And then to use it:
 ```sh
-$ kubectl use-context PREFERRED_CONTEXT
+$ kubectl config use-context PREFERRED_CONTEXT
 $ k8s-run your-serv
 ```
