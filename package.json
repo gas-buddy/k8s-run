@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "bluebird": "^3.5.2",
-    "kubernetes-client": "^3.18.1",
+    "kubernetes-client": "^8.3.7",
     "minimist": "^1.2.0",
     "username": "^3.0.0"
   }
