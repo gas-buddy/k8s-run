@@ -2,22 +2,16 @@
 import Promise from 'bluebird';
 import minimist from 'minimist';
 import username from 'username';
-import Api from 'kubernetes-client';
+import { Client } from 'kubernetes-client';
 import { spawn } from 'child_process';
 
 const argv = minimist(process.argv.slice(2), {
   boolean: ['restartable', 'take-traffic', 'retain'],
 });
 
-const kconf = Api.config.fromKubeconfig();
-kconf.promises = true;
+const client = new Client({ version: argv.version || 1.12 });
 
 const ns = argv.namespace || 'default';
-const core = new Api.Core(kconf);
-const ext = new Api.Extensions({
-  ...kconf,
-  apiVersion: 'v1',
-});
 
 function log(...args) {
   if (!argv.quiet) {
@@ -27,13 +21,14 @@ function log(...args) {
 }
 
 async function isUp(name, retryCount) {
-  const status = await core.ns(ns).po(name).get();
+  const { body: status } = await client.api.v1.namespaces(ns).pods(name).get();
   const { status: { conditions } } = status;
   if (conditions && conditions.find(c => c.type === 'Ready' && c.status === 'True')) {
     log(`${name} is ready.`);
     return true;
   }
-  await Promise.delay(1000);
+  process.stdout.write('.');
+  await Promise.delay(retryCount > 10 ? 1000 : 2500);
   if (retryCount > 0) {
     return isUp(name, retryCount - 1);
   }
@@ -43,9 +38,7 @@ async function isUp(name, retryCount) {
 async function run() {
   const name = argv._[0];
   const uname = await username();
-  const { spec: { template: deployment } } = await ext
-    .ns(ns)
-    .deployments(argv._[0]).get({ export: true });
+  const { body: { spec: { template: deployment } } } = await client.apis.apps.v1.namespaces(ns).deployments(argv._[0]).get({ export: true });
 
   Object.assign(deployment, {
     apiVersion: 'v1',
@@ -76,7 +69,7 @@ async function run() {
     }
   });
 
-  await core.ns(ns).po.post({ body: deployment });
+  await client.api.v1.namespaces(ns).pods.post({ body: deployment });
   log(`${deployment.metadata.name} pod is created.`);
   if (!argv.detach) {
     const ok = await isUp(deployment.metadata.name, 20);
@@ -85,7 +78,7 @@ async function run() {
         stdio: 'inherit',
       }).once('exit', async () => {
         if (!argv.retain) {
-          await core.ns(ns).po(deployment.metadata.name).delete();
+          await client.api.v1.namespaces(ns).pods(deployment.metadata.name).delete();
           log(`${deployment.metadata.name} pod has been deleted.`);
         }
       });
