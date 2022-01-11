@@ -9,7 +9,7 @@ const argv = minimist(process.argv.slice(2), {
   boolean: ['restartable', 'take-traffic', 'retain'],
 });
 
-const client = new Client({ version: argv.version || 1.12 });
+const client = new Client({ version: argv.version || 1.13 });
 
 const ns = argv.namespace || 'default';
 
@@ -23,7 +23,7 @@ function log(...args) {
 async function isUp(name, retryCount) {
   const { body: status } = await client.api.v1.namespaces(ns).pods(name).get();
   const { status: { conditions } } = status;
-  if (conditions && conditions.find(c => c.type === 'Ready' && c.status === 'True')) {
+  if (conditions && conditions.find((c) => c.type === 'Ready' && c.status === 'True')) {
     log(`${name} is ready.`);
     return true;
   }
@@ -74,7 +74,7 @@ async function run() {
   if (!argv.detach) {
     const ok = await isUp(deployment.metadata.name, 20);
     if (ok) {
-      spawn('kubectl', ['exec', '-it', deployment.metadata.name, 'sh'], {
+      spawn('kubectl', ['exec', '-it', deployment.metadata.name, '--', 'sh'], {
         stdio: 'inherit',
       }).once('exit', async () => {
         if (!argv.retain) {
