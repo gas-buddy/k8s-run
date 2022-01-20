@@ -1,6 +1,6 @@
 {
   "name": "@gasbuddy/k8s-run",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Run a pod based on a deployment",
   "main": "build/index.js",
   "scripts": {
@@ -20,7 +20,7 @@
   "author": "GasBuddy",
   "license": "MIT",
   "devDependencies": {
-    "@babel/register": "^7.16.8",
+    "@babel/register": "^7.16.9",
     "babel-preset-gasbuddy": "^6.0.0",
     "eslint-config-gasbuddy": "^6.1.0"
   },
@@ -29,6 +29,6 @@
     "bluebird": "^3.7.2",
     "kubernetes-client": "^9.0.0",
     "minimist": "^1.2.5",
-    "username": "^6.0.0"
+    "username": "^5.1.0"
   }
 }
